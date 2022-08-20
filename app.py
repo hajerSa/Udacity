@@ -331,28 +331,26 @@ def show_artist(artist_id):
     else:
         genres = [ genre.name for genre in artist.genres ]
         past_shows = []
-        past_shows_count = 0
         upcoming_shows = []
-        upcoming_shows_count = 0
         now = datetime.now()
-        for show in artist.shows:
-            if show.start_time > now:
-                upcoming_shows_count += 1
-                upcoming_shows.append({
-                    "venue_id": show.venue_id,
-                    "venue_name": show.venue.name,
-                    "venue_image_link": show.venue.image_link,
-                    "start_time": format_datetime(str(show.start_time))
-                })
-            if show.start_time < now:
-                past_shows_count += 1
-                past_shows.append({
-                    "venue_id": show.venue_id,
-                    "venue_name": show.venue.name,
-                    "venue_image_link": show.venue.image_link,
-                    "start_time": format_datetime(str(show.start_time))
-                })
+        past_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id).filter(Show.start_time < now).all()
+        coming_shows_query = db.session.query(Show).join(Venue).filter(Show.artist_id==artist_id).filter(Show.start_time > now).all()
 
+        for show in past_shows_query:
+            past_shows.append({
+                    "venue_id": show.venue_id,
+                    "venue_name": show.venue.name,
+                    "venue_image_link": show.venue.image_link,
+                    "start_time": format_datetime(str(show.start_time))
+                })
+        for show in coming_shows_query:
+             upcoming_shows.append({
+                    "venue_id": show.venue_id,
+                    "venue_name": show.venue.name,
+                    "venue_image_link": show.venue.image_link,
+                    "start_time": format_datetime(str(show.start_time))
+                })
+                
         data = {
             "id": artist_id,
             "name": artist.name,
@@ -366,9 +364,7 @@ def show_artist(artist_id):
             "seeking_description": artist.seeking_description,
             "image_link": artist.image_link,
             "past_shows": past_shows,
-            "past_shows_count": past_shows_count,
             "upcoming_shows": upcoming_shows,
-            "upcoming_shows_count": upcoming_shows_count
         }
     return render_template('pages/show_artist.html', artist=data)
 
